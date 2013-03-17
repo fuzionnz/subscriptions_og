@@ -43,9 +43,16 @@ function subscriptions_og_subscriptions($op, $arg0 = NULL, $arg1 = NULL, $arg2 =
         $node = $arg0['node'];
 
         $params['node']['group_audience'] = array(
-          'join' => array('table' => 'og_membership', 'alias' => 'ga', 'on' => "s.value = ga.gid AND ga.group_type = 'node'"),
-          'where' => array(array('ga.etid', $node->nid, '='), array('ga.entity_type', 'node', '=')),
-          'groupby' => 'ga.etid'
+          'join' => array(
+            'table' => 'og_membership',
+            'alias' => 'ga',
+            'on' => "s.value = ga.gid AND ga.group_type = 'node'",
+          ),
+          'where' => array(
+            array('ga.etid', $node->nid, '='),
+            array('ga.entity_type', 'node', '='),
+          ),
+          'groupby' => 'ga.etid',
         );
         if ($arg0['type'] == 'comment') {
           $params['node']['group_audience']['where'][] = array('s.send_comments', 1, '=');
@@ -70,7 +77,6 @@ function subscriptions_og_subscriptions($op, $arg0 = NULL, $arg1 = NULL, $arg2 =
         );
       }
       break;
-    // Is this even used? I have no idea if 'token_types' works or works correctly.
     case 'token_types':
       if (strpos($arg0, 'content_og') === 0) {
         return array('node', 'comment');
@@ -102,7 +108,7 @@ function subscriptions_og_subscriptions($op, $arg0 = NULL, $arg1 = NULL, $arg2 =
  *     The user's UID
  */
 function subscriptions_og_page(array $form, $uid) {
-  // Load all active subscriptions for this user, and allow
+  // Load all active OG subscriptions for this user
   $query = db_select('subscriptions', 's', array('fetch' => PDO::FETCH_ASSOC));
   $result = $query
     ->fields('s', array('value', 'send_interval', 'author_uid', 'send_comments', 'send_updates'))
