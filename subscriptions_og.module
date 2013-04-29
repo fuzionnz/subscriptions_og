@@ -70,15 +70,33 @@ function subscriptions_og_subscriptions($op, $arg0 = NULL, $arg1 = NULL, $arg2 =
         return array(
           'group_audience' => array(
             'data_function' => 'subscriptions_content_data',
-            'subs_mod' => 'subscriptions_taxonomy',
+            'subs_mod' => 'subscriptions_og',
             'subs_type' => t('group'),
-            'mailkey' => 'node-type-',
+            'mailkey' => 'group-type-',
           ),
         );
       }
       break;
+    case 'mailkeys':
+      $mailkeys = array();
+      $og_bundles = og_get_all_group_bundle();
+      foreach ($og_bundles['node'] as $node_type => $node_name) {
+        $mailkeys['group-type-' . $node_type] = t('Notifications for group content posted to %type groups', array('%type' => $node_name));
+      }
+      return $mailkeys;
+    case 'mailkey_alter':
+      if ($arg0 == 'group-type-') {
+        $groups = og_get_entity_groups('node', $arg1);
+        // We take only the first group to which this node is posted. This won't
+        // be correct if this node is posted to multiple, different group types.
+        if (!empty($groups) && !empty($groups['node'])) {
+          $group = node_load(current($groups['node']));
+          return 'group-type-' . $group->type;
+        }
+      }
+      break;
     case 'token_types':
-      if (strpos($arg0, 'content_og') === 0) {
+      if (strpos($arg0, 'group-type-') === 0) {
         return array('node', 'comment');
       }
       break;
