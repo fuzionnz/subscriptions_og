@@ -170,6 +170,65 @@ function subscriptions_og_page(array $form, $uid) {
 }
 
 /**
+ * Implements hook_form_FROM_ID_alter().
+ *
+ * Adds checkbox to allow enable/disable autosubscriptions.
+ */
+function subscriptions_og_form_subscriptions_settings_form_alter(&$form, &$form_state, $form_id) {
+
+  $form['subscriptions_og'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Organic Groups subscriptions'),
+    '#collapsible' => TRUE,
+    '#weight' => -8,
+  );
+  $form['subscriptions_og']['subscriptions_og_autosubscribe'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Automatically subscribe/unsubscribe members of an organic group',
+    '#default_value' => variable_get('subscriptions_og_autosubscribe', FALSE),
+    '#description' => t('Automatically subscribe or unsubscribe users as the join or leave an organic group. This will not create subscriptions for existing organic group members.'),
+  );
+}
+
+/**
+ * Implements hook_og_membership_insert().
+ */
+function subscriptions_og_og_membership_insert($og_membership) {
+  $autosubscribe = variable_get('subscriptions_og_autosubscribe', FALSE);
+  if ($autosubscribe && $og_membership->group_type == 'node' && $og_membership->entity_type == 'user') {
+    $send_interval = _subscriptions_get_setting('send_interval', $og_membership->etid);
+    $send_updates = _subscriptions_get_setting('send_updates', $og_membership->etid);
+    $send_comments = _subscriptions_get_setting('send_comments', $og_membership->etid);
+
+    subscriptions_write_subscription(
+      'node',               // Module
+      'group_audience',     // Field
+      $og_membership->gid,  // Value
+      -1,                   // Author uid
+      $og_membership->etid, // Recipient
+      $send_interval,       // Send interval
+      $send_updates,        // Send updates
+      $send_comments        // Send comments
+    );
+  }
+}
+
+/**
+ * Implements hook_og_membership_delete().
+ */
+function subscriptions_og_og_membership_delete($og_membership) {
+  $autosubscribe = variable_get('subscriptions_og_autosubscribe', FALSE);
+  if ($autosubscribe && $og_membership->group_type == 'node' && $og_membership->entity_type == 'user') {
+    subscriptions_delete(
+      $og_membership->etid, // Recipient
+      'node',               // Module
+      'group_audience',     // Field
+      $og_membership->gid   // Value
+    );
+  }
+}
+
+/**
  * Helper function so sort organic groups.
  *
  * Intended for use with usort() and similar functions.
