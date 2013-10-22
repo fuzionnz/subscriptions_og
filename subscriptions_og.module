@@ -126,6 +126,8 @@ function subscriptions_og_subscriptions($op, $arg0 = NULL, $arg1 = NULL, $arg2 =
  *     The user's UID
  */
 function subscriptions_og_page(array $form, $uid) {
+  $account = user_load($uid);
+
   // Load all active OG subscriptions for this user
   $query = db_select('subscriptions', 's', array('fetch' => PDO::FETCH_ASSOC));
   $result = $query
@@ -149,8 +151,8 @@ function subscriptions_og_page(array $form, $uid) {
   usort($groups, '_subscriptions_og_compare_groups');
 
   foreach ($groups as $group) {
-    // Check that the user is allowed to view this group.
-    if(!node_access('view', $group)){
+    // Check that the user is a member of this group
+    if (!og_is_member('node', $group->nid, 'user', $account)) {
       continue;
     }
 
